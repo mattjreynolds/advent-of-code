@@ -1,26 +1,23 @@
 import math
+import numpy
 import itertools
 from collections import defaultdict
-# from pprint import pprint
 
 
 inp = 325489
 
 
-def sum_adjacent_squares(matrix, i):
-    if i == 1:
+def sum_adjacent_squares(square, xy):
+    if xy == (0, 0):
         return 1
 
-    neighbours = {
-        k:v for k,v in matrix.items() 
-        if (
-            k < i
-            and abs(v['x']-matrix[i]['x']) < 2
-            and abs(v['y']-matrix[i]['y']) < 2
-        )
-    }
+    neighbour_offsets = [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]
+    xy_neighbours = list(map(lambda o: tuple(numpy.add(xy, o)), neighbour_offsets))
 
-    return sum(n['value'] for n in neighbours.values())
+    neighbours = { k:square[k] for k in xy_neighbours }
+
+    return sum(n['value'] for n in neighbours.values() if 'value' in n)
+
 
 def generate_matrix(inp=inp, stress_test=False):
     values = [{
@@ -30,7 +27,9 @@ def generate_matrix(inp=inp, stress_test=False):
     }]
 
     matrix = defaultdict(dict)
+    square = defaultdict(dict)
     xy = {'x': 0, 'y': 0}
+    position = itertools.count(1)
     distance = itertools.count()
     direction = itertools.cycle(['r', 'u', 'l', 'd'])
     coords = {
@@ -40,29 +39,31 @@ def generate_matrix(inp=inp, stress_test=False):
         'd': {'x': 0, 'y':-1},
     }
 
+    value = 0
+    pos = next(position)
     dist = next(distance)
     dist_ctr = 0
     move = coords[next(direction)]
 
-    for i in range(1, inp+1):
-        matrix[i].update(xy)
-        value = sum_adjacent_squares(matrix, i) if stress_test else i
-        matrix[i]['value'] = value
+    while(value <= inp):
+        matrix[pos].update(xy)
+        value = sum_adjacent_squares(square, tuple(xy.values())) if stress_test else pos
+        matrix[pos]['position'] = pos
+        matrix[pos]['value'] = value
+        square[tuple(xy.values())] = matrix[pos]
         
-        # print(f'{i}, {xy}, {dist_ctr}/{dist}, {move}')
-
-        if math.sqrt(i).is_integer():
+        if math.sqrt(pos).is_integer():
             dist = next(distance)
 
         if dist_ctr == dist:
             dist_ctr = 0
             move = coords[next(direction)]
 
+        pos = next(position)
         dist_ctr += 1
         xy['x'] += move['x']
         xy['y'] += move['y']
 
-    # pprint(matrix)
     return matrix
 
 
@@ -78,10 +79,9 @@ def day_03(inp=inp):
 
 
 def day_03_part_2(inp=inp):
-    matrix = generate_matrix(inp=inp+1, stress_test=True)
+    matrix = generate_matrix(inp=inp, stress_test=True)
     
-    print(matrix[inp+1]['value'])
-    value = matrix[inp]['value']
+    value = matrix[len(matrix)]['value']
 
     return {
         'stats': '',

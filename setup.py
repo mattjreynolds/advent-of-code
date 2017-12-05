@@ -45,6 +45,7 @@ setup(
     install_requires=[
         'click',
         'click_log',
+        'numpy',
     ],
     extras_require={
         'test': [
